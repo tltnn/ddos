@@ -1,15 +1,10 @@
-{
-  "name": "My Codespace",
-  "image": "ubuntu:22.04",
-  "postStartCommand": "python3 /workspaces/soulcracks/soul.py",
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "python.pythonPath": "/usr/local/bin/python"
-      },
-      "extensions": [
-        "ms-python.python"
-      ]
-    }
-  }
-}
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mi página en Vercel</title>
+</head>
+<body>
+  <h1>Hola mundo desde Vercel</h1>
+</body>
+</html>
