@@ -1,10 +1,53 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Mi página en Vercel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página de Prueba en Vercel</title>
+    <!-- Carga de Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Un gris claro para el fondo */
+        }
+    </style>
 </head>
-<body>
-  <h1>Hola mundo desde Vercel</h1>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+        <img
+            src="https://placehold.co/150x150/cbd5e1/4b5563?text=Vercel"
+            alt="Placeholder Vercel Logo"
+            class="mx-auto mb-6 rounded-lg"
+            onerror="this.onerror=null;this.src='https://placehold.co/150x150/cbd5e1/4b5563?text=Vercel%20Logo';"
+        >
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">¡Hola, Vercel!</h1>
+        <p class="text-gray-600 mb-6">
+            Esta es una página de prueba sencilla desplegada en Vercel.
+            ¡Funciona a la perfección!
+        </p>
+        <div class="space-y-4">
+            <a
+                href="https://vercel.com/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-block bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Explora la Documentación de Vercel
+            </a>
+            <a
+                href="https://github.com/new"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-block bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-300 transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Crea un Nuevo Repositorio en GitHub
+            </a>
+        </div>
+        <p class="text-sm text-gray-500 mt-8">
+            Hecho con ❤️ para ti.
+        </p>
+    </div>
 </body>
 </html>
