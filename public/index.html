@@ -1,176 +1,1105 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard de APIs Multimedia</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      display: flex;
-      font-family: 'Segoe UI', sans-serif;
-      background: #f1f3f8;
-      min-height: 100vh;
-    }
-    .sidebar {
-      width: 250px;
-      background: linear-gradient(180deg, #667eea, #764ba2);
-      color: white;
-      padding: 30px 20px;
-    }
-    .sidebar h2 {
-      font-size: 1.8em;
-      margin-bottom: 30px;
-    }
-    .sidebar ul {
-      list-style: none;
-    }
-    .sidebar li {
-      margin: 15px 0;
-    }
-    .sidebar a {
-      text-decoration: none;
-      color: white;
-      font-weight: 500;
-      display: block;
-    }
-    .sidebar a:hover {
-      text-decoration: underline;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4a6bff;
+            --primary-dark: #3a56cc;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --white: #ffffff;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 10px;
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
 
-    .main {
-      flex: 1;
-      padding: 40px;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .api-section {
-      margin-bottom: 50px;
-    }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7ff;
+            color: #333;
+            line-height: 1.6;
+        }
 
-    .api-section h3 {
-      margin-bottom: 20px;
-      font-size: 1.6em;
-      color: #333;
-    }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
 
-    .card {
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-      margin-bottom: 30px;
-      transition: transform 0.2s;
-    }
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a2533 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
 
-    .card:hover {
-      transform: translateY(-5px);
-    }
+        .logo {
+            text-align: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
 
-    .card h4 {
-      color: #444;
-      margin-bottom: 15px;
-    }
+        .logo h2 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
 
-    .card p {
-      margin-bottom: 10px;
-      color: #666;
-    }
+        .logo p {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
 
-    .code {
-      background: #212529;
-      color: #f8f9fa;
-      padding: 10px 15px;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 14px;
-      margin-bottom: 10px;
-      overflow-x: auto;
-    }
+        .nav-menu {
+            padding: 0 15px;
+        }
 
-    .btn {
-      display: inline-block;
-      padding: 10px 20px;
-      background: #667eea;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
+        .nav-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 20px 0 10px;
+            padding-left: 10px;
+        }
 
-    .btn:hover {
-      background: #5a67d8;
-    }
+        .nav-item {
+            list-style: none;
+            margin-bottom: 5px;
+        }
 
-    @media (max-width: 768px) {
-      .sidebar {
-        display: none;
-      }
-      .main {
-        padding: 20px;
-      }
-    }
-  </style>
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: var(--dark);
+        }
+
+        .search-bar {
+            display: flex;
+            width: 300px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            outline: none;
+        }
+
+        .search-bar button {
+            padding: 10px 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .search-bar button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* API Cards */
+        .api-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .api-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .api-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-card-header {
+            padding: 15px 20px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .api-card-header h3 {
+            font-size: 1.1rem;
+        }
+
+        .api-card-body {
+            padding: 20px;
+        }
+
+        .api-card-description {
+            color: var(--gray);
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .api-card-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: var(--light);
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .api-card-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .api-card-btn.primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .api-card-btn.primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .api-card-btn.secondary {
+            background-color: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--gray-light);
+        }
+
+        .api-card-btn.secondary:hover {
+            background-color: var(--gray-light);
+        }
+
+        /* API Section */
+        .api-section {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .api-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .api-section-header h2 {
+            font-size: 1.5rem;
+            color: var(--dark);
+        }
+
+        .api-section-header .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge.success {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: var(--success);
+        }
+
+        .badge.info {
+            background-color: rgba(23, 162, 184, 0.2);
+            color: var(--info);
+        }
+
+        .badge.warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: var(--warning);
+        }
+
+        .api-form {
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.2);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--gray-light);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--gray-light);
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Results */
+        .result {
+            display: none;
+            margin-top: 25px;
+            background-color: var(--light);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .video-info {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background-color: white;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .video-thumbnail {
+            width: 160px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .video-details h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .video-meta {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .video-meta p {
+            margin-bottom: 5px;
+        }
+
+        .downloads {
+            display: grid;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .download-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--gray-light);
+        }
+
+        .quality-info {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .download-btn {
+            padding: 8px 16px;
+            background: var(--success);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        /* Error */
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        /* API Documentation */
+        .api-docs {
+            margin-top: 30px;
+        }
+
+        .endpoint {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .endpoint-header {
+            padding: 15px 20px;
+            background-color: var(--dark);
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+
+        .endpoint-method {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: 600;
+            margin-right: 15px;
+            font-size: 0.8rem;
+        }
+
+        .method-get {
+            background-color: var(--success);
+        }
+
+        .method-post {
+            background-color: var(--info);
+        }
+
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            flex: 1;
+        }
+
+        .endpoint-body {
+            padding: 20px;
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .param-table th, .param-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .param-table th {
+            background-color: var(--light);
+            font-weight: 600;
+        }
+
+        .param-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .code-block {
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .search-bar {
+                width: 100%;
+            }
+            
+            .video-info {
+                flex-direction: column;
+            }
+            
+            .video-thumbnail {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
 </head>
 <body>
-  <nav class="sidebar">
-    <h2>🎧 APIs</h2>
-    <ul>
-      <li><a href="#api-mp3">YouTube MP3</a></li>
-      <li><a href="#api-mp4">YouTube MP4</a></li>
-      <li><a href="#api-tiktok">TikTok</a></li>
-      <li><a href="#api-spotify">Spotify</a></li>
-      <!-- Más enlaces aquí -->
-    </ul>
-  </nav>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h2><i class="fas fa-cloud"></i> API Dashboard</h2>
+                <p>Herramientas y servicios</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-title">Principal</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">
+                        <i class="fas fa-home"></i>
+                        <span>Inicio</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-title">APIs Multimedia</li>
+                <li class="nav-item">
+                    <a href="#youtube" class="nav-link">
+                        <i class="fab fa-youtube"></i>
+                        <span>YouTube</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fab fa-spotify"></i>
+                        <span>Spotify</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-music"></i>
+                        <span>SoundCloud</span>
+                    </a>
+                </li>
+                
+                <li class="nav-title">APIs de Datos</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span>JSON API</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Clima</span>
+                    </a>
+                </li>
+                
+                <li class="nav-title">Configuración</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Ajustes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Ayuda</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>YouTube API</h1>
+                <div class="search-bar">
+                    <input type="text" placeholder="Buscar API...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            
+            <!-- API Cards -->
+            <div class="api-cards">
+                <div class="api-card">
+                    <div class="api-card-header">
+                        <h3><i class="fab fa-youtube"></i> YouTube MP3</h3>
+                        <span class="badge success">Activo</span>
+                    </div>
+                    <div class="api-card-body">
+                        <p class="api-card-description">Convierte videos de YouTube a archivos MP3 de alta calidad.</p>
+                    </div>
+                    <div class="api-card-footer">
+                        <button class="api-card-btn secondary">Documentación</button>
+                        <button class="api-card-btn primary">Probar API</button>
+                    </div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-card-header">
+                        <h3><i class="fab fa-youtube"></i> YouTube MP4</h3>
+                        <span class="badge success">Activo</span>
+                    </div>
+                    <div class="api-card-body">
+                        <p class="api-card-description">Descarga videos de YouTube en diferentes calidades y formatos.</p>
+                    </div>
+                    <div class="api-card-footer">
+                        <button class="api-card-btn secondary">Documentación</button>
+                        <button class="api-card-btn primary">Probar API</button>
+                    </div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-card-header">
+                        <h3><i class="fab fa-youtube"></i> YouTube Info</h3>
+                        <span class="badge success">Activo</span>
+                    </div>
+                    <div class="api-card-body">
+                        <p class="api-card-description">Obtén información detallada sobre cualquier video de YouTube.</p>
+                    </div>
+                    <div class="api-card-footer">
+                        <button class="api-card-btn secondary">Documentación</button>
+                        <button class="api-card-btn primary">Probar API</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- YouTube API Section -->
+            <div class="api-section" id="youtube">
+                <div class="api-section-header">
+                    <h2><i class="fab fa-youtube"></i> YouTube MP3 Downloader</h2>
+                    <span class="badge info">v2.1.0</span>
+                </div>
+                
+                <form id="downloadForm" class="api-form">
+                    <div class="form-group">
+                        <label for="searchInput">Buscar Canción o URL de YouTube:</label>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            name="searchInput" 
+                            class="form-control"
+                            placeholder="Ej: Enemy Imagine Dragons o https://www.youtube.com/watch?v=..." 
+                            required
+                        >
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Obtener Enlaces
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearResults()">
+                            <i class="fas fa-trash"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Procesando video...</p>
+                </div>
+                
+                <div class="result" id="result"></div>
+                
+                <!-- API Documentation -->
+                <div class="api-docs">
+                    <h3><i class="fas fa-book"></i> Documentación de la API</h3>
+                    
+                    <!-- Endpoint 1 -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="endpoint-method method-get">GET</span>
+                            <span class="endpoint-url">/api/ytmp3?query={search_query}</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <p>Obtiene información y enlace de descarga MP3 para un video de YouTube basado en una búsqueda.</p>
+                            
+                            <h4>Parámetros:</h4>
+                            <table class="param-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parámetro</th>
+                                        <th>Tipo</th>
+                                        <th>Requerido</th>
+                                        <th>Descripción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>query</td>
+                                        <td>string</td>
+                                        <td>Sí</td>
+                                        <td>Término de búsqueda o URL de YouTube</td>
+                                    </tr>
+                                    <tr>
+                                        <td>quality</td>
+                                        <td>string</td>
+                                        <td>No</td>
+                                        <td>Calidad de audio (low, medium, high). Default: high</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="tab-container">
+                                <div class="tab-header">
+                                    <button class="tab-btn active" onclick="openTab(event, 'response-tab-1')">Respuesta</button>
+                                    <button class="tab-btn" onclick="openTab(event, 'example-tab-1')">Ejemplo</button>
+                                    <button class="tab-btn" onclick="openTab(event, 'error-tab-1')">Errores</button>
+                                </div>
+                                
+                                <div id="response-tab-1" class="tab-content active">
+                                    <p>La API devuelve un objeto JSON con la siguiente estructura:</p>
+                                    <div class="code-block">
+{
+  "success": boolean,
+  "video": {
+    "title": string,
+    "duration": string,
+    "views": string,
+    "author": string,
+    "published": string,
+    "thumbnail": string
+  },
+  "download": {
+    "type": "audio",
+    "format": "mp3",
+    "url": string,
+    "filename": string,
+    "filesize": number
+  }
+}
+                                    </div>
+                                </div>
+                                
+                                <div id="example-tab-1" class="tab-content">
+                                    <p>Ejemplo de respuesta exitosa:</p>
+                                    <div class="code-block">
+{
+  "success": true,
+  "video": {
+    "title": "Enemy - Imagine Dragons",
+    "duration": "2:58",
+    "views": "1.2B views",
+    "author": "ImagineDragonsVEVO",
+    "published": "2 years ago",
+    "thumbnail": "https://i.ytimg.com/vi/D9G1VOjN_84/maxresdefault.jpg"
+  },
+  "download": {
+    "type": "audio",
+    "format": "mp3",
+    "url": "https://api.example.com/download/abc123",
+    "filename": "Enemy - Imagine Dragons.mp3",
+    "filesize": 4567890
+  }
+}
+                                    </div>
+                                </div>
+                                
+                                <div id="error-tab-1" class="tab-content">
+                                    <p>Ejemplo de respuesta con error:</p>
+                                    <div class="code-block">
+{
+  "success": false,
+  "error": "No se encontraron resultados para la búsqueda",
+  "code": 404
+}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Endpoint 2 -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="endpoint-method method-get">GET</span>
+                            <span class="endpoint-url">/api/ytmp4?url={youtube_url}</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <p>Obtiene información y enlaces de descarga para un video de YouTube en formato MP4.</p>
+                            
+                            <h4>Parámetros:</h4>
+                            <table class="param-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parámetro</th>
+                                        <th>Tipo</th>
+                                        <th>Requerido</th>
+                                        <th>Descripción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>url</td>
+                                        <td>string</td>
+                                        <td>Sí</td>
+                                        <td>URL completa del video de YouTube</td>
+                                    </tr>
+                                    <tr>
+                                        <td>quality</td>
+                                        <td>string</td>
+                                        <td>No</td>
+                                        <td>Filtrar por calidad (144p, 240p, 360p, 480p, 720p, 1080p, etc)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="tab-container">
+                                <div class="tab-header">
+                                    <button class="tab-btn active" onclick="openTab(event, 'response-tab-2')">Respuesta</button>
+                                    <button class="tab-btn" onclick="openTab(event, 'example-tab-2')">Ejemplo</button>
+                                    <button class="tab-btn" onclick="openTab(event, 'error-tab-2')">Errores</button>
+                                </div>
+                                
+                                <div id="response-tab-2" class="tab-content active">
+                                    <p>La API devuelve un objeto JSON con la siguiente estructura:</p>
+                                    <div class="code-block">
+{
+  "success": boolean,
+  "video": {
+    "title": string,
+    "duration": number,
+    "views": number,
+    "author": string,
+    "thumbnail": string
+  },
+  "downloads": [
+    {
+      "quality": string,
+      "format": string,
+      "url": string,
+      "filesize": number,
+      "fps": number
+    }
+  ]
+}
+                                    </div>
+                                </div>
+                                
+                                <div id="example-tab-2" class="tab-content">
+                                    <p>Ejemplo de respuesta exitosa:</p>
+                                    <div class="code-block">
+{
+  "success": true,
+  "video": {
+    "title": "Enemy - Imagine Dragons",
+    "duration": 178,
+    "views": 1200000000,
+    "author": "ImagineDragonsVEVO",
+    "thumbnail": "https://i.ytimg.com/vi/D9G1VOjN_84/maxresdefault.jpg"
+  },
+  "downloads": [
+    {
+      "quality": "720p",
+      "format": "mp4",
+      "url": "https://api.example.com/download/def456",
+      "filesize": 12345678,
+      "fps": 30
+    },
+    {
+      "quality": "1080p",
+      "format": "mp4",
+      "url": "https://api.example.com/download/ghi789",
+      "filesize": 23456789,
+      "fps": 60
+    }
+  ]
+}
+                                    </div>
+                                </div>
+                                
+                                <div id="error-tab-2" class="tab-content">
+                                    <p>Ejemplo de respuesta con error:</p>
+                                    <div class="code-block">
+{
+  "success": false,
+  "error": "URL de YouTube no válida",
+  "code": 400
+}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <main class="main">
-    <section class="api-section" id="api-mp3">
-      <h3>🎵 YouTube a MP3</h3>
-      <div class="card">
-        <h4>Endpoint</h4>
-        <p><strong>GET</strong> `/api/ytmp3`</p>
+    <script>
+        // Tab functionality
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabButtons = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        // Form submission
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const searchInput = document.getElementById('searchInput').value;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            // Show loading
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                // Determine if input is URL or search query
+                const isUrl = searchInput.includes('youtube.com') || searchInput.includes('youtu.be');
+                const endpoint = isUrl ? `/api/ytmp3?url=${encodeURIComponent(searchInput)}` : `/api/ytmp3?query=${encodeURIComponent(searchInput)}`;
+                
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    displayMP3Result(data);
+                } else {
+                    displayError(data.error || 'Error desconocido');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                displayError('Error de conexión: ' + error.message);
+            }
+        });
 
-        <p><strong>Por búsqueda:</strong></p>
-        <div class="code">/api/ytmp3?query=Enemy Imagine Dragons</div>
+        function displayMP3Result(data) {
+            const result = document.getElementById('result');
+            const video = data.video;
+            const download = data.download;
+            
+            const formatFileSize = (bytes) => {
+                if (!bytes) return 'N/A';
+                const mb = bytes / (1024 * 1024);
+                return mb.toFixed(1) + ' MB';
+            };
+            
+            let html = `
+                <div class="video-info">
+                    <img src="${video.thumbnail}" alt="Thumbnail" class="video-thumbnail">
+                    <div class="video-details">
+                        <h3>${video.title}</h3>
+                        <div class="video-meta">
+                            <p><strong>Canal:</strong> ${video.author}</p>
+                            <p><strong>Duración:</strong> ${video.duration}</p>
+                            <p><strong>Vistas:</strong> ${video.views}</p>
+                            <p><strong>Publicado:</strong> ${video.published}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h4 style="padding: 0 20px; margin: 20px 0 10px;">🎵 Descarga MP3:</h4>
+                <div class="downloads">
+                    <div class="download-item">
+                        <div>
+                            <div class="quality-info">Audio MP3 (${download.format.toUpperCase()})</div>
+                            <small>Tamaño: ${formatFileSize(download.filesize)}</small>
+                        </div>
+                        <a href="${download.url}" class="download-btn" target="_blank" download="${download.filename}">
+                            <i class="fas fa-download"></i> Descargar
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            result.innerHTML = html;
+            result.style.display = 'block';
+        }
 
-        <p><strong>Por URL:</strong></p>
-        <div class="code">/api/ytmp3?url=https://www.youtube.com/watch?v=XXXX</div>
+        function displayError(message) {
+            const result = document.getElementById('result');
+            result.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i> ${message}</div>`;
+            result.style.display = 'block';
+        }
 
-        <a href="#" class="btn">Probar</a>
-      </div>
-    </section>
-
-    <section class="api-section" id="api-mp4">
-      <h3>🎬 YouTube a MP4</h3>
-      <div class="card">
-        <h4>Endpoint</h4>
-        <p><strong>GET</strong> `/api/ytmp4`</p>
-
-        <div class="code">/api/ytmp4?url=https://www.youtube.com/watch?v=XXXX</div>
-
-        <a href="#" class="btn">Probar</a>
-      </div>
-    </section>
-
-    <section class="api-section" id="api-tiktok">
-      <h3>🎵 TikTok Video Downloader</h3>
-      <div class="card">
-        <h4>Próximamente</h4>
-        <p>Descarga videos de TikTok sin marca de agua.</p>
-      </div>
-    </section>
-
-    <section class="api-section" id="api-spotify">
-      <h3>🎶 Spotify Track Info</h3>
-      <div class="card">
-        <h4>Próximamente</h4>
-        <p>Obtén metadatos de canciones de Spotify.</p>
-      </div>
-    </section>
-  </main>
+        function clearResults() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Simulate API card clicks
+        document.querySelectorAll('.api-card-btn.primary').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const apiTitle = this.closest('.api-card').querySelector('h3').textContent;
+                alert(`Iniciando prueba de: ${apiTitle}`);
+            });
+        });
+    </script>
 </body>
 </html>
