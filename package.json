@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'No build step required'",
+    "build": "echo 'Build completed'",
     "start": "vercel dev"
   },
   "dependencies": {
-    "ytdl-core": "^4.11.5"
+    "ytdl-core": "^4.11.5",
+    "yt-search": "^2.10.4",
+    "node-fetch": "^3.3.2"
   },
   "engines": {
     "node": ">=16.x"
