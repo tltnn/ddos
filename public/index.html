@@ -1,447 +1,176 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube MP4 Downloader</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard de APIs Multimedia</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      display: flex;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f1f3f8;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background: linear-gradient(180deg, #667eea, #764ba2);
+      color: white;
+      padding: 30px 20px;
+    }
+    .sidebar h2 {
+      font-size: 1.8em;
+      margin-bottom: 30px;
+    }
+    .sidebar ul {
+      list-style: none;
+    }
+    .sidebar li {
+      margin: 15px 0;
+    }
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+      display: block;
+    }
+    .sidebar a:hover {
+      text-decoration: underline;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+    .main {
+      flex: 1;
+      padding: 40px;
+    }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-            max-width: 800px;
-            width: 100%;
-        }
+    .api-section {
+      margin-bottom: 50px;
+    }
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-        }
+    .api-section h3 {
+      margin-bottom: 20px;
+      font-size: 1.6em;
+      color: #333;
+    }
 
-        .input-group {
-            margin-bottom: 20px;
-        }
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+      transition: transform 0.2s;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
+    .card:hover {
+      transform: translateY(-5px);
+    }
 
-        input[type="url"] {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e1e1;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
+    .card h4 {
+      color: #444;
+      margin-bottom: 15px;
+    }
 
-        input[type="url"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+    .card p {
+      margin-bottom: 10px;
+      color: #666;
+    }
 
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
+    .code {
+      background: #212529;
+      color: #f8f9fa;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 10px;
+      overflow-x: auto;
+    }
 
-        button {
-            flex: 1;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+    .btn:hover {
+      background: #5a67d8;
+    }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: #f8f9fa;
-            color: #333;
-            border: 2px solid #e1e1e1;
-        }
-
-        .btn-secondary:hover {
-            background: #e9ecef;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .result {
-            display: none;
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .video-info {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e1e1e1;
-        }
-
-        .video-thumbnail {
-            width: 120px;
-            height: 90px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .video-details h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .video-meta {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .downloads {
-            display: grid;
-            gap: 10px;
-        }
-
-        .download-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e1e1e1;
-        }
-
-        .quality-info {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .download-btn {
-            padding: 8px 16px;
-            background: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .download-btn:hover {
-            background: #218838;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .api-info {
-            margin-top: 40px;
-            padding: 20px;
-            background: #e9ecef;
-            border-radius: 10px;
-        }
-
-        .api-info h3 {
-            margin-bottom: 15px;
-            color: #495057;
-        }
-
-        .code {
-            background: #212529;
-            color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            margin: 10px 0;
-        }
-    </style>
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .main {
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎵 YouTube MP3 Downloader</h1>
-        
-        <form id="downloadForm">
-            <div class="input-group">
-                <label for="searchInput">Buscar Canción o URL de YouTube:</label>
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    name="searchInput" 
-                    placeholder="Ej: Enemy Imagine Dragons o https://www.youtube.com/watch?v=..." 
-                    required
-                >
-            </div>
-            
-            <div class="btn-group">
-                <button type="submit" class="btn-primary">📥 Obtener Enlaces</button>
-                <button type="button" class="btn-secondary" onclick="clearResults()">🗑️ Limpiar</button>
-            </div>
-        </form>
+  <nav class="sidebar">
+    <h2>🎧 APIs</h2>
+    <ul>
+      <li><a href="#api-mp3">YouTube MP3</a></li>
+      <li><a href="#api-mp4">YouTube MP4</a></li>
+      <li><a href="#api-tiktok">TikTok</a></li>
+      <li><a href="#api-spotify">Spotify</a></li>
+      <!-- Más enlaces aquí -->
+    </ul>
+  </nav>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Procesando video...</p>
-        </div>
+  <main class="main">
+    <section class="api-section" id="api-mp3">
+      <h3>🎵 YouTube a MP3</h3>
+      <div class="card">
+        <h4>Endpoint</h4>
+        <p><strong>GET</strong> `/api/ytmp3`</p>
 
-        <div class="result" id="result"></div>
+        <p><strong>Por búsqueda:</strong></p>
+        <div class="code">/api/ytmp3?query=Enemy Imagine Dragons</div>
 
-        <div class="api-info">
-            <h3>📚 Documentación de las APIs</h3>
-            
-            <h4>🎵 API MP3:</h4>
-            <p><strong>Endpoint:</strong> <code>/api/ytmp3</code></p>
-            
-            <h5>Por búsqueda:</h5>
-            <div class="code">GET /api/ytmp3?query=Enemy Imagine Dragons</div>
-            
-            <h5>Por URL:</h5>
-            <div class="code">GET /api/ytmp3?url=https://www.youtube.com/watch?v=VIDEO_ID</div>
-            
-            <h4>🎬 API MP4:</h4>
-            <p><strong>Endpoint:</strong> <code>/api/ytmp4</code></p>
-            <div class="code">GET /api/ytmp4?url=https://www.youtube.com/watch?v=VIDEO_ID</div>
+        <p><strong>Por URL:</strong></p>
+        <div class="code">/api/ytmp3?url=https://www.youtube.com/watch?v=XXXX</div>
 
-            <h4>Respuesta MP3:</h4>
-            <div class="code">{
-  "success": true,
-  "video": {
-    "title": "Enemy - Imagine Dragons",
-    "duration": "2:58",
-    "views": "1.2B views",
-    "author": "ImagineDragonsVEVO",
-    "published": "2 years ago",
-    "thumbnail": "url_thumbnail"
-  },
-  "download": {
-    "type": "audio",
-    "format": "mp3",
-    "url": "enlace_descarga_directa",
-    "filename": "Enemy - Imagine Dragons.mp3"
-  }
-}</div>
-        </div>
-    </div>
+        <a href="#" class="btn">Probar</a>
+      </div>
+    </section>
 
-    <script>
-        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const searchInput = document.getElementById('searchInput').value;
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            
-            // Mostrar loading
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            
-            try {
-                const response = await fetch(`/api/ytmp3?query=${encodeURIComponent(searchInput)}`);
-                const data = await response.json();
-                
-                loading.style.display = 'none';
-                
-                if (data.success) {
-                    displayMP3Result(data);
-                } else {
-                    displayError(data.error || 'Error desconocido');
-                }
-            } catch (error) {
-                loading.style.display = 'none';
-                displayError('Error de conexión: ' + error.message);
-            }
-        });
+    <section class="api-section" id="api-mp4">
+      <h3>🎬 YouTube a MP4</h3>
+      <div class="card">
+        <h4>Endpoint</h4>
+        <p><strong>GET</strong> `/api/ytmp4`</p>
 
-        async function testMP4() {
-            const searchInput = document.getElementById('searchInput').value;
-            if (!searchInput) {
-                alert('Ingresa una búsqueda o URL primero');
-                return;
-            }
-            
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            
-            try {
-                const response = await fetch(`/api/ytmp4?url=${encodeURIComponent(searchInput)}`);
-                const data = await response.json();
-                
-                loading.style.display = 'none';
-                
-                if (data.success) {
-                    displayResult(data);
-                } else {
-                    displayError(data.error || 'Error desconocido');
-                }
-            } catch (error) {
-                loading.style.display = 'none';
-                displayError('Error de conexión: ' + error.message);
-            }
-        }
+        <div class="code">/api/ytmp4?url=https://www.youtube.com/watch?v=XXXX</div>
 
-        function displayMP3Result(data) {
-            const result = document.getElementById('result');
-            const video = data.video;
-            const download = data.download;
-            
-            let html = `
-                <div class="video-info">
-                    <img src="${video.thumbnail}" alt="Thumbnail" class="video-thumbnail">
-                    <div class="video-details">
-                        <h3>${video.title}</h3>
-                        <div class="video-meta">
-                            <p><strong>Canal:</strong> ${video.author}</p>
-                            <p><strong>Duración:</strong> ${video.duration}</p>
-                            <p><strong>Vistas:</strong> ${video.views}</p>
-                            <p><strong>Publicado:</strong> ${video.published}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <h4>🎵 Descarga MP3:</h4>
-                <div class="downloads">
-                    <div class="download-item">
-                        <div>
-                            <div class="quality-info">Audio MP3</div>
-                            <small>Formato: ${download.format.toUpperCase()}</small>
-                        </div>
-                        <a href="${download.url}" class="download-btn" target="_blank" download="${download.filename}">Descargar MP3</a>
-                    </div>
-                </div>
-            `;
-            
-            result.innerHTML = html;
-            result.style.display = 'block';
-        }
+        <a href="#" class="btn">Probar</a>
+      </div>
+    </section>
 
-        function displayResult(data) {
-            const result = document.getElementById('result');
-            const video = data.video;
-            const downloads = data.downloads;
-            
-            const formatFileSize = (bytes) => {
-                if (!bytes) return 'N/A';
-                const mb = bytes / (1024 * 1024);
-                return mb.toFixed(1) + ' MB';
-            };
+    <section class="api-section" id="api-tiktok">
+      <h3>🎵 TikTok Video Downloader</h3>
+      <div class="card">
+        <h4>Próximamente</h4>
+        <p>Descarga videos de TikTok sin marca de agua.</p>
+      </div>
+    </section>
 
-            const formatDuration = (seconds) => {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
-            };
-
-            let html = `
-                <div class="video-info">
-                    <img src="${video.thumbnail}" alt="Thumbnail" class="video-thumbnail">
-                    <div class="video-details">
-                        <h3>${video.title}</h3>
-                        <div class="video-meta">
-                            <p><strong>Canal:</strong> ${video.author}</p>
-                            <p><strong>Duración:</strong> ${formatDuration(video.duration)}</p>
-                            <p><strong>Vistas:</strong> ${parseInt(video.viewCount).toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <h4>📥 Enlaces de Descarga:</h4>
-                <div class="downloads">
-            `;
-            
-            downloads.forEach(download => {
-                html += `
-                    <div class="download-item">
-                        <div>
-                            <div class="quality-info">${download.quality}</div>
-                            <small>Tamaño: ${formatFileSize(download.filesize)} | FPS: ${download.fps || 'N/A'}</small>
-                        </div>
-                        <a href="${download.url}" class="download-btn" target="_blank">Descargar</a>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            
-            result.innerHTML = html;
-            result.style.display = 'block';
-        }
-
-        function displayError(message) {
-            const result = document.getElementById('result');
-            result.innerHTML = `<div class="error">❌ ${message}</div>`;
-            result.style.display = 'block';
-        }
-
-        function clearResults() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('result').style.display = 'none';
-            document.getElementById('loading').style.display = 'none';
-        }
-    </script>
+    <section class="api-section" id="api-spotify">
+      <h3>🎶 Spotify Track Info</h3>
+      <div class="card">
+        <h4>Próximamente</h4>
+        <p>Obtén metadatos de canciones de Spotify.</p>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
