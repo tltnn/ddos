@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -222,16 +221,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎬 YouTube MP4 Downloader</h1>
+        <h1>🎵 YouTube MP3 Downloader</h1>
         
         <form id="downloadForm">
             <div class="input-group">
-                <label for="videoUrl">URL del Video de YouTube:</label>
+                <label for="searchInput">Buscar Canción o URL de YouTube:</label>
                 <input 
-                    type="url" 
-                    id="videoUrl" 
-                    name="videoUrl" 
-                    placeholder="https://www.youtube.com/watch?v=..." 
+                    type="text" 
+                    id="searchInput" 
+                    name="searchInput" 
+                    placeholder="Ej: Enemy Imagine Dragons o https://www.youtube.com/watch?v=..." 
                     required
                 >
             </div>
@@ -250,39 +249,38 @@
         <div class="result" id="result"></div>
 
         <div class="api-info">
-            <h3>📚 Documentación de la API</h3>
+            <h3>📚 Documentación de las APIs</h3>
+            
+            <h4>🎵 API MP3:</h4>
+            <p><strong>Endpoint:</strong> <code>/api/ytmp3</code></p>
+            
+            <h5>Por búsqueda:</h5>
+            <div class="code">GET /api/ytmp3?query=Enemy Imagine Dragons</div>
+            
+            <h5>Por URL:</h5>
+            <div class="code">GET /api/ytmp3?url=https://www.youtube.com/watch?v=VIDEO_ID</div>
+            
+            <h4>🎬 API MP4:</h4>
             <p><strong>Endpoint:</strong> <code>/api/ytmp4</code></p>
-            
-            <h4>GET Request:</h4>
             <div class="code">GET /api/ytmp4?url=https://www.youtube.com/watch?v=VIDEO_ID</div>
-            
-            <h4>POST Request:</h4>
-            <div class="code">POST /api/ytmp4
-Content-Type: application/json
 
-{
-  "url": "https://www.youtube.com/watch?v=VIDEO_ID"
-}</div>
-
-            <h4>Respuesta de ejemplo:</h4>
+            <h4>Respuesta MP3:</h4>
             <div class="code">{
   "success": true,
   "video": {
-    "title": "Título del video",
-    "duration": "123",
-    "thumbnail": "url_thumbnail",
-    "author": "Canal",
-    "viewCount": "1000000"
+    "title": "Enemy - Imagine Dragons",
+    "duration": "2:58",
+    "views": "1.2B views",
+    "author": "ImagineDragonsVEVO",
+    "published": "2 years ago",
+    "thumbnail": "url_thumbnail"
   },
-  "downloads": [
-    {
-      "quality": "720p",
-      "url": "enlace_descarga",
-      "filesize": "12345678",
-      "fps": 30,
-      "codec": "avc1.64001F"
-    }
-  ]
+  "download": {
+    "type": "audio",
+    "format": "mp3",
+    "url": "enlace_descarga_directa",
+    "filename": "Enemy - Imagine Dragons.mp3"
+  }
 }</div>
         </div>
     </div>
@@ -291,7 +289,7 @@ Content-Type: application/json
         document.getElementById('downloadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const url = document.getElementById('videoUrl').value;
+            const searchInput = document.getElementById('searchInput').value;
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             
@@ -300,7 +298,37 @@ Content-Type: application/json
             result.style.display = 'none';
             
             try {
-                const response = await fetch(`/api/ytmp4?url=${encodeURIComponent(url)}`);
+                const response = await fetch(`/api/ytmp3?query=${encodeURIComponent(searchInput)}`);
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    displayMP3Result(data);
+                } else {
+                    displayError(data.error || 'Error desconocido');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                displayError('Error de conexión: ' + error.message);
+            }
+        });
+
+        async function testMP4() {
+            const searchInput = document.getElementById('searchInput').value;
+            if (!searchInput) {
+                alert('Ingresa una búsqueda o URL primero');
+                return;
+            }
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch(`/api/ytmp4?url=${encodeURIComponent(searchInput)}`);
                 const data = await response.json();
                 
                 loading.style.display = 'none';
@@ -314,7 +342,42 @@ Content-Type: application/json
                 loading.style.display = 'none';
                 displayError('Error de conexión: ' + error.message);
             }
-        });
+        }
+
+        function displayMP3Result(data) {
+            const result = document.getElementById('result');
+            const video = data.video;
+            const download = data.download;
+            
+            let html = `
+                <div class="video-info">
+                    <img src="${video.thumbnail}" alt="Thumbnail" class="video-thumbnail">
+                    <div class="video-details">
+                        <h3>${video.title}</h3>
+                        <div class="video-meta">
+                            <p><strong>Canal:</strong> ${video.author}</p>
+                            <p><strong>Duración:</strong> ${video.duration}</p>
+                            <p><strong>Vistas:</strong> ${video.views}</p>
+                            <p><strong>Publicado:</strong> ${video.published}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h4>🎵 Descarga MP3:</h4>
+                <div class="downloads">
+                    <div class="download-item">
+                        <div>
+                            <div class="quality-info">Audio MP3</div>
+                            <small>Formato: ${download.format.toUpperCase()}</small>
+                        </div>
+                        <a href="${download.url}" class="download-btn" target="_blank" download="${download.filename}">Descargar MP3</a>
+                    </div>
+                </div>
+            `;
+            
+            result.innerHTML = html;
+            result.style.display = 'block';
+        }
 
         function displayResult(data) {
             const result = document.getElementById('result');
@@ -375,7 +438,7 @@ Content-Type: application/json
         }
 
         function clearResults() {
-            document.getElementById('videoUrl').value = '';
+            document.getElementById('searchInput').value = '';
             document.getElementById('result').style.display = 'none';
             document.getElementById('loading').style.display = 'none';
         }
