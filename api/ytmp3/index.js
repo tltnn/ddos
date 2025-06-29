@@ -3,8 +3,10 @@ const router = express.Router();
 const ytsr = require('ytsr');
 const axios = require('axios');
 const fetch = require('node-fetch');
+
 // API externa para audio MP3
-ddownr: {
+// ¡Aquí estaba el error! Necesitas 'const' para declarar el objeto ddownr.
+const ddownr = {
     download: async (url) => {
         const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
         try {
@@ -35,7 +37,7 @@ ddownr: {
                 // O si 'success' es false en la respuesta de progreso.
                 if (response.data && !response.data.success) {
                     console.error('API de progreso devolvió success: false:', response.data);
-                    throw new Error('La API de progreso indicó un fallo.');
+                    throw new new Error('La API de progreso indicó un fallo.');
                 }
 
                 await new Promise(res => setTimeout(res, 4000)); // Esperar 4s
@@ -48,41 +50,41 @@ ddownr: {
     }
 };
 router.get('/', async (req, res) => {
-  try {
-    const { query, url } = req.query;
-    if (!query && !url) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Debes proporcionar un parámetro "query" o "url"' 
-      });
-    }
-    // 1. Obtener la URL del video
-    let videoUrl = url;
-    if (!videoUrl) {
-      const searchResults = await ytsr(query, { limit: 1 });
-      const firstResult = searchResults.items?.[0];
-      if (!firstResult || firstResult.type !== 'video') {
-        return res.status(404).json({ 
-          success: false, 
-          error: 'No se encontró un video válido' 
+    try {
+        const { query, url } = req.query;
+        if (!query && !url) {
+            return res.status(400).json({
+                success: false,
+                error: 'Debes proporcionar un parámetro "query" o "url"'
+            });
+        }
+        // 1. Obtener la URL del video
+        let videoUrl = url;
+        if (!videoUrl) {
+            const searchResults = await ytsr(query, { limit: 1 });
+            const firstResult = searchResults.items?.[0];
+            if (!firstResult || firstResult.type !== 'video') {
+                return res.status(404).json({
+                    success: false,
+                    error: 'No se encontró un video válido'
+                });
+            }
+            videoUrl = firstResult.url;
+        }
+        // 2. Descargar audio usando la API externa
+        const downloadUrl = await ddownr.download(videoUrl);
+        // 3. Obtener el audio y enviarlo como respuesta
+        const audioResponse = await fetch(downloadUrl);
+        if (!audioResponse.ok) throw new Error('Error al descargar el archivo de audio');
+        res.setHeader('Content-Disposition', `attachment; filename="audio.mp3"`);
+        res.setHeader('Content-Type', 'audio/mpeg');
+        audioResponse.body.pipe(res);
+    } catch (error) {
+        console.error('Error en la API YouTube MP3:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Error desconocido'
         });
-      }
-      videoUrl = firstResult.url;
     }
-    // 2. Descargar audio usando la API externa
-    const downloadUrl = await ddownr.download(videoUrl);
-    // 3. Obtener el audio y enviarlo como respuesta
-    const audioResponse = await fetch(downloadUrl);
-    if (!audioResponse.ok) throw new Error('Error al descargar el archivo de audio');
-    res.setHeader('Content-Disposition', `attachment; filename="audio.mp3"`);
-    res.setHeader('Content-Type', 'audio/mpeg');
-    audioResponse.body.pipe(res);
-  } catch (error) {
-    console.error('Error en la API YouTube MP3:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error desconocido'
-    });
-  }
 });
 module.exports = router;
