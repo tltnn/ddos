@@ -1,4 +1,3 @@
-
 // Este archivo es opcional en Vercel pero puede ser útil para pruebas locales
 // Vercel automáticamente sirve los archivos de la carpeta api/
 
@@ -35,10 +34,20 @@ app.get('/api', (req, res) => {
   });
 });
 
+// --- ¡AÑADE ESTAS LÍNEAS AQUÍ! ---
+// 1. Cargar el router de ytmp3
+const ytmp3Router = require('./api/ytmp3/index.js'); // Asegúrate de que esta ruta sea correcta
+
+// 2. Usar el router en una ruta específica (ej. /api/ytmp3)
+app.use('/api/ytmp3', ytmp3Router);
+// --- FIN DE LAS LÍNEAS A AÑADIR ---
+
+
 // Solo para desarrollo local
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Router ytmp3 montado en http://localhost:${PORT}/api/ytmp3`); // Mensaje de confirmación
   });
 }
 
