@@ -4,25 +4,48 @@ const ytsr = require('ytsr');
 const axios = require('axios');
 const fetch = require('node-fetch');
 // API externa para audio MP3
-const ddownr = {
-  download: async (url) => {
-    const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
-    const response = await axios.get(apiUrl);
-    if (response.data?.success) {
-      return await ddownr.cekProgress(response.data.id);
+ddownr: {
+    download: async (url) => {
+        const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
+        try {
+            const response = await axios.get(apiUrl);
+            // Si llegamos aquí, la respuesta fue JSON. Loguea el JSON completo si quieres.
+            // console.log('Respuesta de download API (éxito):', response.data);
+            if (response.data?.success) {
+                return await ddownr.cekProgress(response.data.id);
+            }
+            // Si 'success' es false pero la respuesta es JSON, también lo capturaría
+            throw new Error("Fallo al obtener el audio de la API (success: false).");
+        } catch (error) {
+            // AQUÍ ES DONDE QUEREMOS VER EL CONTENIDO NO-JSON
+            console.error('Error en ddownr.download. Respuesta cruda:', error.response ? error.response.data : error.message);
+            throw new Error(`Error en la llamada a la API de descarga: ${error.message}.`);
+        }
+    },
+    cekProgress: async (id) => {
+        const progressUrl = `https://p.oceansaver.in/ajax/progress.php?id=${id}`;
+        while (true) {
+            try {
+                const response = await axios.get(progressUrl);
+                // console.log('Respuesta de cekProgress API (éxito):', response.data);
+                if (response.data?.success && response.data.progress === 1000) {
+                    return response.data.download_url;
+                }
+                // Aquí podrías añadir una condición para salir del bucle si el progreso no avanza tras X intentos
+                // O si 'success' es false en la respuesta de progreso.
+                if (response.data && !response.data.success) {
+                    console.error('API de progreso devolvió success: false:', response.data);
+                    throw new Error('La API de progreso indicó un fallo.');
+                }
+
+                await new Promise(res => setTimeout(res, 4000)); // Esperar 4s
+            } catch (error) {
+                // Y AQUÍ TAMBIÉN QUEREMOS VER EL CONTENIDO NO-JSON
+                console.error('Error en ddownr.cekProgress. Respuesta cruda:', error.response ? error.response.data : error.message);
+                throw new Error(`Error al verificar el progreso del audio: ${error.message}.`);
+            }
+        }
     }
-    throw new Error("Fallo al obtener el audio.");
-  },
-  cekProgress: async (id) => {
-    const progressUrl = `https://p.oceansaver.in/ajax/progress.php?id=${id}`;
-    while (true) {
-      const response = await axios.get(progressUrl);
-      if (response.data?.success && response.data.progress === 1000) {
-        return response.data.download_url;
-      }
-      await new Promise(res => setTimeout(res, 4000)); // Esperar 4s entre chequeos
-    }
-  }
 };
 router.get('/', async (req, res) => {
   try {
