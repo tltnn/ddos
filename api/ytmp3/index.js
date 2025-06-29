@@ -1,105 +1,74 @@
 const express = require('express');
 const router = express.Router();
-const ytdl = require('ytdl-core');
+const axios = require('axios');
 const ytsr = require('ytsr');
-const ffmpeg = require('fluent-ffmpeg');
-const stream = require('stream');
 
-// Configuración de FFmpeg (asegúrate de tener ffmpeg instalado en tu sistema)
-ffmpeg.setFfmpegPath(require('ffmpeg-static'));
+// OceanSaver API wrapper
+const ddownr = {
+  download: async (url) => {
+    const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
+    try {
+      const response = await axios.get(apiUrl);
+      if (response.data?.success) {
+        return await ddownr.cekProgress(response.data.id);
+      }
+      throw new Error("Fallo al obtener el audio.");
+    } catch (error) {
+      throw new Error("Error al contactar con la API.");
+    }
+  },
+  cekProgress: async (id) => {
+    const progressUrl = `https://p.oceansaver.in/ajax/progress.php?id=${id}`;
+    while (true) {
+      const response = await axios.get(progressUrl);
+      if (response.data?.success && response.data.progress === 1000) {
+        return response.data.download_url;
+      }
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  }
+};
 
 router.get('/', async (req, res) => {
-    try {
-        const { query, url } = req.query;
+  try {
+    const { query, url } = req.query;
 
-        if (!query && !url) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Debes proporcionar un parámetro "query" o "url"' 
-            });
-        }
-
-        let videoInfo;
-        
-        if (url) {
-            // Validar URL de YouTube
-            if (!ytdl.validateURL(url)) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'URL de YouTube no válida' 
-                });
-            }
-            
-            videoInfo = await ytdl.getInfo(url);
-        } else {
-            // Buscar por query
-            const searchResults = await ytsr(query, { limit: 1 });
-            if (!searchResults.items || searchResults.items.length === 0) {
-                return res.status(404).json({ 
-                    success: false, 
-                    error: 'No se encontraron resultados' 
-                });
-            }
-            
-            const firstResult = searchResults.items[0];
-            if (firstResult.type !== 'video') {
-                return res.status(404).json({ 
-                    success: false, 
-                    error: 'No se encontró un video válido' 
-                });
-            }
-            
-            videoInfo = await ytdl.getInfo(firstResult.url);
-        }
-
-        const audioFormats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
-        if (audioFormats.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'No se encontraron formatos de audio disponibles' 
-            });
-        }
-
-        const highestQuality = audioFormats.reduce((prev, current) => 
-            (prev.bitrate > current.bitrate) ? prev : current
-        );
-
-        const title = videoInfo.videoDetails.title.replace(/[^\w\s]/gi, '');
-        const artist = videoInfo.videoDetails.author.name;
-        const thumbnail = videoInfo.videoDetails.thumbnails.slice(-1)[0].url;
-
-        // Configurar headers para la respuesta
-        res.setHeader('Content-Disposition', `attachment; filename="${title}.mp3"`);
-        res.setHeader('Content-Type', 'audio/mpeg');
-
-        // Stream de audio de YouTube
-        const audioStream = ytdl.downloadFromInfo(videoInfo, { format: highestQuality });
-
-        // Convertir a MP3 usando FFmpeg
-        const ffmpegCommand = ffmpeg(audioStream)
-            .audioBitrate(320)
-            .audioCodec('libmp3lame')
-            .format('mp3')
-            .on('error', (err) => {
-                console.error('Error en FFmpeg:', err);
-                if (!res.headersSent) {
-                    res.status(500).json({ 
-                        success: false, 
-                        error: 'Error al procesar el audio' 
-                    });
-                }
-            });
-
-        // Pipe al response
-        ffmpegCommand.pipe(res, { end: true });
-
-    } catch (error) {
-        console.error('Error en la API YouTube MP3:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message || 'Error al procesar la solicitud' 
-        });
+    if (!query && !url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar un parámetro "query" o "url"'
+      });
     }
+
+    let videoUrl = url;
+
+    // Si solo hay query, buscar el primer resultado de YouTube
+    if (!url) {
+      const searchResults = await ytsr(query, { limit: 1 });
+      const firstResult = searchResults.items.find(item => item.type === 'video');
+      if (!firstResult) {
+        return res.status(404).json({ success: false, error: 'No se encontró un video válido.' });
+      }
+      videoUrl = firstResult.url;
+    }
+
+    // Obtener el enlace de descarga MP3 desde OceanSaver
+    const downloadUrl = await ddownr.download(videoUrl);
+
+    // Descargar y redirigir o enviar el archivo directamente
+    res.setHeader('Content-Disposition', `attachment; filename="audio.mp3"`);
+    res.setHeader('Content-Type', 'audio/mpeg');
+
+    const response = await axios.get(downloadUrl, { responseType: 'stream' });
+    response.data.pipe(res);
+
+  } catch (error) {
+    console.error('Error en la API MP3 con OceanSaver:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error al procesar la solicitud.'
+    });
+  }
 });
 
 module.exports = router;
