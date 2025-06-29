@@ -923,84 +923,89 @@
             }
         }
 
-        function testAPI() {
-            const testBtn = document.getElementById('testBtn');
-            const resultDiv = document.getElementById('testResult');
-            const resultContent = document.getElementById('resultContent');
-            
-            // Show loading state
-            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ejecutando...';
-            testBtn.disabled = true;
-            
-            // Simulate API call
-            setTimeout(() => {
-                const queryType = document.getElementById('queryType').value;
-                let apiUrl = '';
-                let mockResponse = {};
-                
-                if (currentAPI === 'ytmp3') {
-                    if (queryType === 'search') {
-                        const searchTerm = document.getElementById('searchTerm').value || 'Enemy Imagine Dragons';
-                        apiUrl = `/api/ytmp3?query=${encodeURIComponent(searchTerm)}`;
-                        mockResponse = {
-                            success: true,
-                            data: {
-                                title: "Enemy - Imagine Dragons",
-                                artist: "Imagine Dragons",
-                                duration: "2:53",
-                                thumbnail: "https://img.youtube.com/vi/D9G1VOjN_84/maxresdefault.jpg",
-                                download_url: "https://api.example.com/download/mp3/abc123",
-                                quality: "320kbps",
-                                size: "6.8 MB"
-                            }
-                        };
-                    } else {
-                        const videoUrl = document.getElementById('videoUrl').value || 'https://www.youtube.com/watch?v=D9G1VOjN_84';
-                        apiUrl = `/api/ytmp3?url=${encodeURIComponent(videoUrl)}`;
-                        mockResponse = {
-                            success: true,
-                            data: {
-                                title: "Enemy - Imagine Dragons",
-                                artist: "Imagine Dragons",
-                                duration: "2:53",
-                                thumbnail: "https://img.youtube.com/vi/D9G1VOjN_84/maxresdefault.jpg",
-                                download_url: "https://api.example.com/download/mp3/abc123",
-                                quality: "320kbps",
-                                size: "6.8 MB"
-                            }
-                        };
-                    }
-                } else if (currentAPI === 'ytmp4') {
-                    const videoUrl = document.getElementById('videoUrl').value || 'https://www.youtube.com/watch?v=D9G1VOjN_84';
-                    const quality = document.getElementById('quality').value;
-                    apiUrl = `/api/ytmp4?url=${encodeURIComponent(videoUrl)}&quality=${quality}`;
-                    mockResponse = {
-                        success: true,
-                        data: {
-                            title: "Enemy - Imagine Dragons",
-                            duration: "2:53",
-                            thumbnail: "https://img.youtube.com/vi/D9G1VOjN_84/maxresdefault.jpg",
-                            download_url: "https://api.example.com/download/mp4/abc123",
-                            quality: quality,
-                            resolution: quality,
-                            size: quality === '1080p' ? '45.2 MB' : quality === '720p' ? '28.7 MB' : '15.3 MB'
-                        }
-                    };
+       async function testAPI() {
+    const testBtn = document.getElementById('testBtn');
+    const resultDiv = document.getElementById('testResult');
+    const resultContent = document.getElementById('resultContent');
+    
+    // Show loading state
+    testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ejecutando...';
+    testBtn.disabled = true;
+    
+    try {
+        const queryType = document.getElementById('queryType').value;
+        let apiUrl = '';
+        
+        if (currentAPI === 'ytmp3') {
+            if (queryType === 'search') {
+                const searchTerm = document.getElementById('searchTerm').value;
+                if (!searchTerm) {
+                    throw new Error('Ingresa un término de búsqueda');
                 }
-                
-                // Show result
-                resultContent.textContent = JSON.stringify(mockResponse, null, 2);
-                resultDiv.style.display = 'block';
-                
-                // Reset button
-                testBtn.innerHTML = '<i class="fas fa-rocket"></i> Ejecutar Prueba';
-                testBtn.disabled = false;
-                
-                // Show success notification
-                showNotification('¡Prueba exitosa!', 'success');
-                
-            }, 2000);
+                apiUrl = `/api/ytmp3?query=${encodeURIComponent(searchTerm)}`;
+            } else {
+                const videoUrl = document.getElementById('videoUrl').value;
+                if (!videoUrl) {
+                    throw new Error('Ingresa una URL de YouTube');
+                }
+                apiUrl = `/api/ytmp3?url=${encodeURIComponent(videoUrl)}`;
+            }
+        } else if (currentAPI === 'ytmp4') {
+            const videoUrl = document.getElementById('videoUrl').value;
+            if (!videoUrl) {
+                throw new Error('Ingresa una URL de YouTube');
+            }
+            const quality = document.getElementById('quality').value;
+            apiUrl = `/api/ytmp4?url=${encodeURIComponent(videoUrl)}&quality=${quality}`;
         }
+        
+        const response = await fetch(apiUrl);
+        
+        if (currentAPI === 'ytmp3' || currentAPI === 'ytmp4') {
+            // Para descargas, mostramos información antes de descargar
+            if (response.headers.get('content-type').includes('application/json')) {
+                const data = await response.json();
+                resultContent.textContent = JSON.stringify(data, null, 2);
+            } else {
+                const contentDisposition = response.headers.get('content-disposition');
+                const contentType = response.headers.get('content-type');
+                
+                resultContent.textContent = JSON.stringify({
+                    success: true,
+                    download: true,
+                    filename: contentDisposition.split('filename=')[1].replace(/"/g, ''),
+                    contentType: contentType,
+                    downloadUrl: apiUrl
+                }, null, 2);
+                
+                // Crear enlace de descarga
+                setTimeout(() => {
+                    const a = document.createElement('a');
+                    a.href = apiUrl;
+                    a.download = true;
+                    a.click();
+                }, 1000);
+            }
+        } else {
+            const data = await response.json();
+            resultContent.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        resultDiv.style.display = 'block';
+        showNotification('¡Prueba exitosa!', 'success');
+        
+    } catch (error) {
+        resultContent.textContent = JSON.stringify({
+            success: false,
+            error: error.message
+        }, null, 2);
+        resultDiv.style.display = 'block';
+        showNotification(error.message, 'error');
+    } finally {
+        testBtn.innerHTML = '<i class="fas fa-rocket"></i> Ejecutar Prueba';
+        testBtn.disabled = false;
+    }
+}
 
         function showNotification(message, type = 'success') {
             // Create notification element
