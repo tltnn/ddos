@@ -889,6 +889,11 @@
             document.body.style.overflow = 'hidden';
         }
 
+        function validateYouTubeUrl(url) {
+            const pattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+           return pattern.test(url);
+        }
+
         function closeTestModal() {
             document.getElementById('testModal').classList.remove('active');
             document.body.style.overflow = 'auto';
@@ -923,7 +928,7 @@
             }
         }
 
-       async function testAPI() {
+      async function testAPI() {
     const testBtn = document.getElementById('testBtn');
     const resultDiv = document.getElementById('testResult');
     const resultContent = document.getElementById('resultContent');
@@ -931,68 +936,75 @@
     // Show loading state
     testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ejecutando...';
     testBtn.disabled = true;
+    resultDiv.style.display = 'none';
     
     try {
         const queryType = document.getElementById('queryType').value;
         let apiUrl = '';
         
+        // Validar inputs
         if (currentAPI === 'ytmp3') {
             if (queryType === 'search') {
                 const searchTerm = document.getElementById('searchTerm').value;
-                if (!searchTerm) {
-                    throw new Error('Ingresa un término de búsqueda');
-                }
+                if (!searchTerm) throw new Error('Ingresa un término de búsqueda');
                 apiUrl = `/api/ytmp3?query=${encodeURIComponent(searchTerm)}`;
             } else {
                 const videoUrl = document.getElementById('videoUrl').value;
-                if (!videoUrl) {
-                    throw new Error('Ingresa una URL de YouTube');
-                }
+                if (!videoUrl) throw new Error('Ingresa una URL de YouTube');
+                if (!ytdl.validateURL(videoUrl)) throw new Error('URL de YouTube no válida');
                 apiUrl = `/api/ytmp3?url=${encodeURIComponent(videoUrl)}`;
             }
         } else if (currentAPI === 'ytmp4') {
             const videoUrl = document.getElementById('videoUrl').value;
-            if (!videoUrl) {
-                throw new Error('Ingresa una URL de YouTube');
-            }
+            if (!videoUrl) throw new Error('Ingresa una URL de YouTube');
+            if (!ytdl.validateURL(videoUrl)) throw new Error('URL de YouTube no válida');
             const quality = document.getElementById('quality').value;
             apiUrl = `/api/ytmp4?url=${encodeURIComponent(videoUrl)}&quality=${quality}`;
         }
         
         const response = await fetch(apiUrl);
         
-        if (currentAPI === 'ytmp3' || currentAPI === 'ytmp4') {
-            // Para descargas, mostramos información antes de descargar
-            if (response.headers.get('content-type').includes('application/json')) {
-                const data = await response.json();
-                resultContent.textContent = JSON.stringify(data, null, 2);
-            } else {
-                const contentDisposition = response.headers.get('content-disposition');
-                const contentType = response.headers.get('content-type');
-                
-                resultContent.textContent = JSON.stringify({
-                    success: true,
-                    download: true,
-                    filename: contentDisposition.split('filename=')[1].replace(/"/g, ''),
-                    contentType: contentType,
-                    downloadUrl: apiUrl
-                }, null, 2);
-                
-                // Crear enlace de descarga
-                setTimeout(() => {
-                    const a = document.createElement('a');
-                    a.href = apiUrl;
-                    a.download = true;
-                    a.click();
-                }, 1000);
-            }
-        } else {
+        // Verificar si la respuesta es JSON (error) o un archivo (éxito)
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType.includes('application/json')) {
             const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+            
             resultContent.textContent = JSON.stringify(data, null, 2);
+            resultDiv.style.display = 'block';
+            showNotification(data.error || 'Error en la API', 'error');
+            return;
         }
         
+        // Procesar descarga exitosa
+        let resultData = {
+            success: true,
+            download: true,
+            contentType: contentType
+        };
+        
+        // Manejar content-disposition si existe
+        const contentDisposition = response.headers.get('content-disposition');
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+?)"?$/);
+            if (filenameMatch && filenameMatch[1]) {
+                resultData.filename = filenameMatch[1];
+            }
+        }
+        
+        resultData.downloadUrl = apiUrl;
+        resultContent.textContent = JSON.stringify(resultData, null, 2);
         resultDiv.style.display = 'block';
-        showNotification('¡Prueba exitosa!', 'success');
+        
+        // Crear enlace de descarga automático
+        const a = document.createElement('a');
+        a.href = apiUrl;
+        a.target = '_blank';
+        if (resultData.filename) a.download = resultData.filename;
+        a.click();
+        
+        showNotification('Descarga iniciada', 'success');
         
     } catch (error) {
         resultContent.textContent = JSON.stringify({
