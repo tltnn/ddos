@@ -1912,119 +1912,49 @@ hd: "true|false (default: true)"`,
         }
 
         // Test API (simulated)
-        function testAPI() {
-            const testBtn = document.getElementById('testBtn');
-            const resultDiv = document.getElementById('testResult');
-            const resultContent = document.getElementById('resultContent');
-            const curlCommand = document.getElementById('curlCommand');
-            
-            // Show loading state
-            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ejecutando...';
-            testBtn.disabled = true;
-            
-            // Simulate API call
-            setTimeout(() => {
-                const queryType = document.getElementById('queryType').value;
-                let apiUrl = '';
-                let mockResponse = {};
-                
-                if (state.currentAPI === 'ytmp3') {
-                    if (queryType === 'search') {
-                        const searchTerm = document.getElementById('searchTerm').value || 'Enemy Imagine Dragons';
-                        const format = document.getElementById('format').value;
-                        apiUrl = `/api/v1/ytmp3?query=${encodeURIComponent(searchTerm)}&format=${format}`;
-                        mockResponse = {
-                            success: true,
-                            data: {
-                                id: "D9G1VOjN_84",
-                                title: "Enemy - Imagine Dragons",
-                                artist: "Imagine Dragons",
-                                duration: 173,
-                                thumbnail: "https://img.youtube.com/vi/D9G1VOjN_84/maxresdefault.jpg",
-                                download_url: "https://api.example.com/download/mp3/abc123",
-                                quality: "320kbps",
-                                size: "6.8 MB",
-                                format: format
-                            }
-                        };
-                    } else {
-                        const videoUrl = document.getElementById('videoUrl').value || 'https://www.youtube.com/watch?v=D9G1VOjN_84';
-                        const format = document.getElementById('format').value;
-                        apiUrl = `/api/v1/ytmp3?url=${encodeURIComponent(videoUrl)}&format=${format}`;
-                        mockResponse = {
-                            success: true,
-                            data: {
-                                id: "D9G1VOjN_84",
-                                title: "Enemy - Imagine Dragons",
-                                artist: "Imagine Dragons",
-                                duration: 173,
-                                thumbnail: "https://img.youtube.com/vi/D9G1VOjN_84/maxresdefault.jpg",
-                                download_url: "https://api.example.com/download/mp3/abc123",
-                                quality: "320kbps",
-                                size: "6.8 MB",
-                                format: format
-                            }
-                        };
-                    }
-                } else if (state.currentAPI === 'ytmp4') {
-                    const videoUrl = document.getElementById('videoUrl').value || 'https://www.youtube.com/watch?v=D9G1VOjN_84';
-                    const quality = document.getElementById('quality').value;
-                    apiUrl = `/api/v1/ytmp4?url=${encodeURIComponent(videoUrl)}&quality=${quality}`;
-                    mockResponse = {
-                        success: true,
-                        data: {
-                            id: "D9G1VOjN_84",
-                            title: "Enemy - Imagine Dragons",
-                            duration: 173,
-                            thumbnail: "https://img.youtube.com/vi/D9G1VOjN_84/maxresdefault.jpg",
-                            download_url: `https://api.example.com/download/mp4/abc123?quality=${quality}`,
-                            quality: quality,
-                            size: quality === '1080p' ? '45.2 MB' : quality === '720p' ? '28.7 MB' : '15.3 MB',
-                            formats: [
-                                { quality: "1080p", url: "...", size: "45.2MB" },
-                                { quality: "720p", url: "...", size: "28.7MB" },
-                                { quality: "480p", url: "...", size: "18.1MB" }
-                            ]
-                        }
-                    };
-                } else if (state.currentAPI === 'tiktok') {
-                    const videoUrl = document.getElementById('videoUrl').value || 'https://www.tiktok.com/@example/video/12345';
-                    apiUrl = `/api/beta/tiktok?url=${encodeURIComponent(videoUrl)}`;
-                    mockResponse = {
-                        success: true,
-                        data: {
-                            id: "7324567890123456789",
-                            url: "https://v16.tiktok.com/xxx",
-                            author: "@imagine.dragons",
-                            description: "Official music video for Enemy by Imagine Dragons",
-                            duration: 15,
-                            likes: "1.2M",
-                            comments: "45.6K",
-                            shares: "230.4K",
-                            download_url: "https://api.example.com/download/tiktok/xxx"
-                        }
-                    };
-                }
-                
-                // Generate cURL command
-                const curlCmd = `curl -X GET "https://api.example.com${apiUrl}" \\
-  -H "Accept: application/json" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`;
-                
-                // Show result
-                resultContent.textContent = JSON.stringify(mockResponse, null, 2);
-                curlCommand.textContent = curlCmd;
-                resultDiv.style.display = 'block';
-                
-                // Reset button
-                testBtn.innerHTML = '<i class="fas fa-rocket"></i> Ejecutar Prueba';
-                testBtn.disabled = false;
-                
-                // Show success notification
-                showNotification('¡Prueba exitosa! Respuesta simulada recibida.', 'success');
-                
-            }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5s
+       async function testAPI() {
+    const testBtn = document.getElementById('testBtn');
+    const resultDiv = document.getElementById('testResult');
+    const resultContent = document.getElementById('resultContent');
+    const curlCommand = document.getElementById('curlCommand');
+
+    testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ejecutando...';
+    testBtn.disabled = true;
+
+    try {
+        const queryType = document.getElementById('queryType')?.value;
+        const format = document.getElementById('format')?.value;
+        let url = '';
+        
+        if (state.currentAPI === 'ytmp3') {
+            if (queryType === 'search') {
+                const searchTerm = document.getElementById('searchTerm').value;
+                url = `/api/ytmp3?query=${encodeURIComponent(searchTerm)}&format=${format}`;
+            } else {
+                const videoUrl = document.getElementById('videoUrl').value;
+                url = `/api/ytmp3?url=${encodeURIComponent(videoUrl)}&format=${format}`;
+            }
         }
+
+        // Hacer llamada real al backend
+        const response = await fetch(url);
+        const data = await response.json();
+
+        resultContent.textContent = JSON.stringify(data, null, 2);
+        curlCommand.textContent = `curl -X GET "${window.location.origin}${url}"`;
+        resultDiv.style.display = 'block';
+
+        showNotification('¡Prueba exitosa! Datos reales obtenidos.', 'success');
+    } catch (error) {
+        resultContent.textContent = `Error: ${error.message}`;
+        resultDiv.style.display = 'block';
+        showNotification('¡Error al llamar a la API!', 'error');
+    }
+
+    testBtn.innerHTML = '<i class="fas fa-rocket"></i> Ejecutar Prueba';
+    testBtn.disabled = false;
+}
+
 
         // Switch tabs in test modal
         function switchTab(tabId) {
