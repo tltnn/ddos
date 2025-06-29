@@ -1,9 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server"
-import axios from "axios"
+const axios = require("axios")
 
 // API externa para audio MP3
 const ddownr = {
-  download: async (url: string): Promise<string> => {
+  download: async (url) => {
     const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`
 
     try {
@@ -12,13 +11,13 @@ const ddownr = {
         return await ddownr.cekProgress(response.data.id)
       }
       throw new Error("Fallo al obtener el audio.")
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error en ddownr.download:", error.response ? error.response.data : error.message)
       throw new Error(`Error en la llamada a la API de descarga: ${error.message}`)
     }
   },
 
-  cekProgress: async (id: string): Promise<string> => {
+  cekProgress: async (id) => {
     const progressUrl = `https://p.oceansaver.in/ajax/progress.php?id=${id}`
 
     while (true) {
@@ -35,7 +34,7 @@ const ddownr = {
         }
 
         await new Promise((resolve) => setTimeout(resolve, 4000)) // Esperar 4s entre chequeos
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error en ddownr.cekProgress:", error.response ? error.response.data : error.message)
         throw new Error(`Error al verificar el progreso del audio: ${error.message}`)
       }
@@ -43,38 +42,39 @@ const ddownr = {
   },
 }
 
-// Función para buscar videos de YouTube
-async function searchYouTube(query: string) {
+// Función para buscar videos de YouTube (simulada)
+async function searchYouTube(query) {
   try {
-    // Usando una API alternativa para búsqueda de YouTube
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=1&key=YOUR_YOUTUBE_API_KEY`
-
-    // Como alternativa, usaremos una búsqueda simple que construye la URL
-    const searchQuery = query.replace(/\s+/g, "+")
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`
-
     // Para este ejemplo, construiremos una URL básica de YouTube
     // En producción, deberías usar la API oficial de YouTube
+    const searchQuery = query.replace(/\s+/g, "+")
     return `https://www.youtube.com/watch?v=dQw4w9WgXcQ` // URL de ejemplo
   } catch (error) {
     throw new Error("Error al buscar en YouTube")
   }
 }
 
-export async function GET(request: NextRequest) {
+// Handler principal para Vercel
+module.exports = async (req, res) => {
+  // Configurar CORS
+  res.setHeader("Access-Control-Allow-Origin", "*")
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+
+  // Manejar preflight requests
+  if (req.method === "OPTIONS") {
+    res.status(200).end()
+    return
+  }
+
   try {
-    const { searchParams } = new URL(request.url)
-    const query = searchParams.get("query")
-    const url = searchParams.get("url")
+    const { query, url } = req.query
 
     if (!query && !url) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Debes proporcionar un parámetro "query" o "url"',
-        },
-        { status: 400 },
-      )
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar un parámetro "query" o "url"',
+      })
     }
 
     // 1. Obtener la URL del video
@@ -84,13 +84,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!videoUrl) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No se pudo obtener la URL del video",
-        },
-        { status: 404 },
-      )
+      return res.status(404).json({
+        success: false,
+        error: "No se pudo obtener la URL del video",
+      })
     }
 
     // 2. Descargar audio usando la API externa
@@ -103,25 +100,18 @@ export async function GET(request: NextRequest) {
       throw new Error("Error al descargar el archivo de audio")
     }
 
-    // Obtener el buffer del audio
-    const audioBuffer = await audioResponse.arrayBuffer()
+    // Configurar headers para descarga
+    res.setHeader("Content-Disposition", 'attachment; filename="audio.mp3"')
+    res.setHeader("Content-Type", "audio/mpeg")
 
-    // Crear la respuesta con el audio
-    return new NextResponse(audioBuffer, {
-      headers: {
-        "Content-Disposition": 'attachment; filename="audio.mp3"',
-        "Content-Type": "audio/mpeg",
-        "Content-Length": audioBuffer.byteLength.toString(),
-      },
-    })
-  } catch (error: any) {
+    // Pipe el audio directamente a la respuesta
+    const buffer = await audioResponse.arrayBuffer()
+    res.send(Buffer.from(buffer))
+  } catch (error) {
     console.error("Error en la API YouTube MP3:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Error desconocido",
-      },
-      { status: 500 },
-    )
+    res.status(500).json({
+      success: false,
+      error: error.message || "Error desconocido",
+    })
   }
 }
