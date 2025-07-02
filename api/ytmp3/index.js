@@ -1,172 +1,264 @@
-const axios = require("axios")
-
-// API externa para audio MP3
-const ddownr = {
-  download: async (url) => {
-    const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`
-
+import axios from 'axios';
+import { wrapper } from 'axios-cookiejar-support';
+import FormData from 'form-data';
+import WebSocket from 'ws';
+import * as cheerio from 'cheerio';
+import { CookieJar } from 'tough-cookie';
+import crypto from 'crypto';
+ 
+const amdl = {
+  api: {
+    base: {
+      video: 'https://amp4.cc',
+      audio: 'https://amp3.cc'
+    }
+  },
+  headers: {
+    Accept: 'application/json',
+    'User-Agent': 'Postify/1.0.0',
+  },
+  jar: new CookieJar(),
+  client: wrapper(axios.create({ jar: new CookieJar() })),
+ 
+  ytRegex: /^((?:https?:)?\/\/)?((?:www|m|music)\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?([a-zA-Z0-9_-]{11})/,
+ 
+  formats: {
+    video: ['144p', '240p', '360p', '480p', '720p', '1080p'],
+    audio: ['64k', '128k', '192k', '256k', '320k']
+  },
+ 
+  captcha: {
+    hashChallenge: async function(salt, number, algorithm) {
+      return crypto.createHash(algorithm.toLowerCase()).update(salt + number).digest('hex');
+    },
+ 
+    verifyChallenge: async function(challengeData, salt, algorithm, maxNumber) {
+      for (let i = 0; i <= maxNumber; i++) {
+        if (await this.hashChallenge(salt, i, algorithm) === challengeData) {
+          return { number: i, took: Date.now() };
+        }
+      }
+      throw new Error('Captcha verification failed.');
+    },
+ 
+    solve: async function(challenge) {
+      const { algorithm, challenge: challengeData, salt, maxnumber, signature } = challenge;
+      const solution = await this.verifyChallenge(challengeData, salt, algorithm, maxnumber);
+      return Buffer.from(
+        JSON.stringify({
+          algorithm,
+          challenge: challengeData,
+          number: solution.number,
+          salt,
+          signature,
+          took: solution.took,
+        })
+      ).toString('base64');
+    },
+  },
+ 
+  isUrl: async function(url) {
+    if (!url) {
+      return {
+        status: false,
+        code: 400,
+        result: {
+          error: "Linknya mana? Yakali download kagak ada linknya 🗿"
+        }
+      };
+    }
+ 
+    if (!this.ytRegex.test(url)) {
+      return {
+        status: false,
+        code: 400,
+        result: {
+          error: "Lu masukin link apaan sih 🗿 Link Youtube aja bree, kan lu mau download youtube 👍🏻"
+        }
+      };
+    }
+ 
+    return {
+      status: true,
+      code: 200,
+      id: url.match(this.ytRegex)[3]
+    };
+  },
+ 
+  convert: async function(url, format, quality, isAudio = false) {
     try {
-      console.log("Llamando a la API de descarga:", apiUrl)
-      const response = await axios.get(apiUrl)
-      console.log("Respuesta de la API de descarga:", response.data)
-
-      if (response.data?.success) {
-        // Usar la URL de progreso que devuelve la API
-        const progressUrl = response.data.progress_url || `https://p.oceansaver.in/api/progress?id=${response.data.id}`
-        return await ddownr.cekProgress(response.data.id, progressUrl)
+      const linkx = await this.isUrl(url);
+      if (!linkx.status) return linkx;
+ 
+      const formatx = isAudio ? this.formats.audio : this.formats.video;
+      if (!quality || !formatx.includes(quality)) {
+        return {
+          status: false,
+          code: 400,
+          result: {
+            error: "Formatnya kagak ada bree, pilih yang udah disediain aja yak, jangan nyari yang gak ada 🗿",
+            available_fmt: formatx
+          }
+        };
       }
-      throw new Error("Fallo al obtener el audio.")
+ 
+      const fixedURL = `https://youtu.be/${linkx.id}`;
+      const base = isAudio ? this.api.base.audio : this.api.base.video;
+ 
+      const pages = await this.client.get(`${base}/`);
+      const $ = cheerio.load(pages.data);
+      const csrfToken = $('meta[name="csrf-token"]').attr('content');
+ 
+      if (!csrfToken) {
+        return {
+          status: false,
+          code: 500,
+          result: {
+            error: "CSRFnya kagak ada bree 🙃 lagi problem keknya.. "
+          }
+        };
+      }
+ 
+      const form = new FormData();
+      form.append('url', fixedURL);
+      form.append('format', format);
+      form.append('quality', quality);
+      form.append('service', 'youtube');
+      
+      if (isAudio) {
+        form.append('playlist', 'false');
+      }
+ 
+      form.append('_token', csrfToken);
+ 
+      const captchaX = await this.client.get(`${base}/captcha`, {
+        headers: { 
+          ...this.headers,
+          Origin: base,
+          Referer: `${base}/`
+        },
+      });
+      
+      if (captchaX.data) {
+        const solvedCaptcha = await this.captcha.solve(captchaX.data);
+        form.append('altcha', solvedCaptcha);
+      }
+ 
+      const endpoint = isAudio ? '/convertAudio' : '/convertVideo';
+      const res = await this.client.post(`${base}${endpoint}`, form, {
+        headers: { 
+          ...form.getHeaders(),
+          ...this.headers,
+          Origin: base,
+          Referer: `${base}/`
+        },
+      });
+ 
+      if (!res.data.success) {
+        return {
+          status: false,
+          code: 400,
+          result: {
+            error: res.data.message
+          }
+        };
+      }
+ 
+      const ws = await this.connect(res.data.message, isAudio);
+      const dlink = `${base}/dl/${ws.worker}/${res.data.message}/${encodeURIComponent(ws.file)}`;
+ 
+      return {
+        status: true,
+        code: 200,
+        result: {
+          title: ws.title || "Gak tau 🤷🏻",
+          type: isAudio ? 'audio' : 'video',
+          format: format,
+          thumbnail: ws.thumbnail || `https://i.ytimg.com/vi/${linkx.id}/maxresdefault.jpg`,
+          download: dlink,
+          id: linkx.id,
+          duration: ws.duration,
+          quality: quality,
+          uploader: ws.uploader
+        }
+      };
+ 
     } catch (error) {
-      console.error("Error en ddownr.download:", error.response ? error.response.data : error.message)
-      throw new Error(`Error en la llamada a la API de descarga: ${error.message}`)
+      return {
+        status: false,
+        code: 500,
+        result: {
+          error: "Error ceunah 😂"
+        }
+      };
     }
   },
-
-  cekProgress: async (id, progressUrl) => {
-    console.log("Verificando progreso con URL:", progressUrl)
-    let attempts = 0
-    const maxAttempts = 30 // Máximo 2 minutos (30 * 4 segundos)
-
-    while (attempts < maxAttempts) {
-      try {
-        const response = await axios.get(progressUrl)
-        console.log(`Intento ${attempts + 1} - Respuesta de progreso:`, response.data)
-
-        if (response.data?.success) {
-          // Verificar si el progreso está completo
-          if (response.data.progress === 1000 || response.data.progress === "1000") {
-            console.log("Descarga completada, URL:", response.data.download_url)
-            return response.data.download_url
+ 
+  connect: async function(id, isAudio = false) {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(`wss://${isAudio ? 'amp3' : 'amp4'}.cc/ws`, ['json'], {
+        headers: { 
+          ...this.headers,
+          Origin: `https://${isAudio ? 'amp3' : 'amp4'}.cc`
+        },
+        rejectUnauthorized: false,
+      });
+ 
+      let fileInfo = {};
+      let timeoutId = setTimeout(() => {
+        ws.close();
+        reject({
+          status: false,
+          code: 408,
+          result: {
+            error: "Connection timeout, Servernya kagak ngeresponse ceunah bree 🤣"
           }
-
-          // Si hay progreso pero no está completo
-          if (response.data.progress) {
-            console.log(`Progreso: ${response.data.progress}/1000`)
+        });
+      }, 30000);
+ 
+      ws.on('open', () => ws.send(id));
+      ws.on('message', (data) => {
+        const res = JSON.parse(data);
+        if (res.event === 'query' || res.event === 'queue') {
+          fileInfo = { thumbnail: res.thumbnail, title: res.title, duration: res.duration, uploader: res.uploader };
+        } else if (res.event === 'file' && res.done) {
+          clearTimeout(timeoutId);
+          ws.close();
+          resolve({ ...fileInfo, ...res });
+        }
+      });
+      ws.on('error', (err) => {
+        clearTimeout(timeoutId);
+        reject({
+          status: false,
+          code: 500,
+          result: {
+            error: "Yaelah, nih server jelek amat yakk.. Gagal tersambung mulu etdah 😂"
           }
-        } else {
-          console.error("API de progreso devolvió success: false:", response.data)
-          throw new Error("La API de progreso indicó un fallo.")
-        }
-
-        attempts++
-        await new Promise((resolve) => setTimeout(resolve, 4000)) // Esperar 4s entre chequeos
-      } catch (error) {
-        console.error("Error en ddownr.cekProgress:", error.response ? error.response.data : error.message)
-        attempts++
-
-        if (attempts >= maxAttempts) {
-          throw new Error(
-            `Error al verificar el progreso del audio después de ${maxAttempts} intentos: ${error.message}`,
-          )
-        }
-
-        // Esperar antes del siguiente intento
-        await new Promise((resolve) => setTimeout(resolve, 4000))
-      }
-    }
-
-    throw new Error("Timeout: La descarga tardó demasiado tiempo")
+        });
+      });
+    });
   },
-}
-
-// Función para buscar videos de YouTube (simulada)
-async function searchYouTube(query) {
-  try {
-    // Para este ejemplo, construiremos una URL básica de YouTube
-    // En producción, deberías usar la API oficial de YouTube
-    const searchQuery = query.replace(/\s+/g, "+")
-    return `https://www.youtube.com/watch?v=dQw4w9WgXcQ` // URL de ejemplo
-  } catch (error) {
-    throw new Error("Error al buscar en YouTube")
+ 
+  download: async function(url, format = '720p') {
+    try {
+      const isAudio = format === 'mp3';
+      return await this.convert(
+        url,
+        isAudio ? 'mp3' : 'mp4',
+        isAudio ? '128k' : format,
+        isAudio
+      );
+    } catch (error) {
+      return {
+        status: false,
+        code: 500,
+        result: {
+          error: "Error euy 🤣"
+        }
+      };
+    }
   }
-}
-
-// Handler principal para Vercel
-module.exports = async (req, res) => {
-  // Configurar CORS
-  res.setHeader("Access-Control-Allow-Origin", "*")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-
-  // Manejar preflight requests
-  if (req.method === "OPTIONS") {
-    res.status(200).end()
-    return
-  }
-
-  try {
-    const { query, url } = req.query
-
-    if (!query && !url) {
-      res.setHeader("Content-Type", "application/json")
-      return res.status(400).json({
-        success: false,
-        error: 'Debes proporcionar un parámetro "query" o "url"',
-      })
-    }
-
-    // 1. Obtener la URL del video
-    let videoUrl = url
-    if (!videoUrl && query) {
-      videoUrl = await searchYouTube(query)
-    }
-
-    if (!videoUrl) {
-      res.setHeader("Content-Type", "application/json")
-      return res.status(404).json({
-        success: false,
-        error: "No se pudo obtener la URL del video",
-      })
-    }
-
-    console.log("Procesando URL:", videoUrl)
-
-    // 2. Descargar audio usando la API externa
-    const downloadUrl = await ddownr.download(videoUrl)
-    console.log("URL de descarga obtenida:", downloadUrl)
-
-    if (!downloadUrl) {
-      throw new Error("No se pudo obtener la URL de descarga")
-    }
-
-    // 3. Obtener el audio y enviarlo como respuesta
-    console.log("Descargando archivo de audio...")
-    const audioResponse = await fetch(downloadUrl)
-
-    if (!audioResponse.ok) {
-      throw new Error(`Error al descargar el archivo de audio: ${audioResponse.status} ${audioResponse.statusText}`)
-    }
-
-    // Verificar que realmente es un archivo de audio
-    const contentType = audioResponse.headers.get("content-type")
-    console.log("Content-Type del audio:", contentType)
-
-    // Configurar headers para descarga de audio
-    res.setHeader("Content-Disposition", 'attachment; filename="audio.mp3"')
-    res.setHeader("Content-Type", "audio/mpeg")
-
-    const contentLength = audioResponse.headers.get("content-length")
-    if (contentLength) {
-      res.setHeader("Content-Length", contentLength)
-    }
-
-    // Convertir a buffer y enviar
-    const buffer = await audioResponse.arrayBuffer()
-    console.log("Tamaño del archivo:", buffer.byteLength, "bytes")
-
-    if (buffer.byteLength === 0) {
-      throw new Error("El archivo descargado está vacío")
-    }
-
-    res.send(Buffer.from(buffer))
-  } catch (error) {
-    console.error("Error completo en la API YouTube MP3:", error)
-
-    // Asegurarse de que la respuesta de error sea JSON
-    res.setHeader("Content-Type", "application/json")
-    res.status(500).json({
-      success: false,
-      error: error.message || "Error desconocido",
-    })
-  }
-}
+};
+ 
+export { amdl };
