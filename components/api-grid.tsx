@@ -1,4 +1,3 @@
-"use client"
 
 import { ApiCard } from "./api-card"
 import type { ApiConfig } from "@/types/api"
