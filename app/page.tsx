@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 
-// Componente Button simple sin dependencias externas
+// Componente Button simple
 function Button({
   children,
   onClick,
