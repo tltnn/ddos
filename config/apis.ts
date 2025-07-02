@@ -26,18 +26,18 @@ export const apiConfig: ApiConfig[] = [
       },
     ],
     parameters: [
-      { name: "query", type: "string", required: false, description: "Término de búsqueda" },
-      { name: "url", type: "string", required: false, description: "URL de YouTube" },
-      { name: "quality", type: "string", required: false, description: "low|medium|high", default: "medium" },
-      { name: "format", type: "string", required: false, description: "mp3|mp4", default: "mp3" },
+      { name: "query", type: "string", required: false, description: "Término de búsqueda (no implementado)" },
+      { name: "url", type: "string", required: true, description: "URL de YouTube" },
+      { name: "quality", type: "string", required: false, description: "64k|128k|192k|256k|320k", default: "128k" },
+      { name: "format", type: "string", required: false, description: "mp3", default: "mp3" },
     ],
     testConfig: {
-      hasSearch: true,
+      hasSearch: false, // Desactivar búsqueda por ahora
       hasUrl: true,
       hasQuality: false,
       hasFormat: true,
-      defaultSearch: "Enemy Imagine Dragons",
       defaultUrl: "https://www.youtube.com/watch?v=D9G1VOjN_84",
+      formatOptions: ["mp3"],
     },
   },
   {
@@ -66,9 +66,14 @@ export const apiConfig: ApiConfig[] = [
     ],
     parameters: [
       { name: "url", type: "string", required: true, description: "URL de YouTube" },
-      { name: "quality", type: "string", required: false, description: "360p|480p|720p|1080p|4k", default: "720p" },
+      {
+        name: "quality",
+        type: "string",
+        required: false,
+        description: "144p|240p|360p|480p|720p|1080p",
+        default: "720p",
+      },
       { name: "audioOnly", type: "boolean", required: false, description: "Solo extraer audio", default: false },
-      { name: "subtitles", type: "boolean", required: false, description: "Incluir subtítulos", default: false },
     ],
     testConfig: {
       hasSearch: false,
@@ -76,7 +81,7 @@ export const apiConfig: ApiConfig[] = [
       hasQuality: true,
       hasFormat: false,
       defaultUrl: "https://www.youtube.com/watch?v=D9G1VOjN_84",
-      qualityOptions: ["360p", "480p", "720p", "1080p", "4k"],
+      qualityOptions: ["144p", "240p", "360p", "480p", "720p", "1080p"],
     },
   },
   {
